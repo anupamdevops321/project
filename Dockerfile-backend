@@ -1,0 +1,40 @@
+# Build stage
+FROM golang:1.19 AS builder
+
+WORKDIR /app
+
+# Clone the repository
+RUN git clone https://code.techverito.com/anupamdutta/devops-fullstack-app.git .
+
+# Set working directory to the backend folder
+WORKDIR /app/backend
+
+# Download Go modules
+RUN go mod download
+
+# Build the Go binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o app .
+
+# Production stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy only necessary files from the builder stage
+COPY --from=builder /app/backend/app .
+COPY --from=builder /app/backend/go.mod .
+COPY --from=builder /app/backend/go.sum .
+
+# Set environment variables
+# ENV DB_HOST=database-5.cxjzledzjksx.us-east-1.rds.amazonaws.com \
+#     DB_USER=postgres \
+#     DB_PASSWORD=anupam123 \
+#     DB_NAME=database5 \
+#     DB_PORT=5432 \
+#     ALLOWED_ORIGINS=*
+
+# Expose the port
+EXPOSE 8080
+
+# Command to run the application
+CMD ["./app"]
